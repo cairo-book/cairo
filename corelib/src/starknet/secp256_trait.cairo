@@ -1,3 +1,12 @@
+//! Elliptic Curve Digital Signature Algorithm (ECDSA) for Secp256k1 and Secp256r1 curves.
+//!
+//! This module provides traits and functions for working with ECDSA signatures
+//! on the Secp256k1 and the Secp256r1 curves. It includes utilities for creating
+//! and validating signatures, as well as recovering public keys from signatures.
+//!
+//! # Examples
+//! TODO(tadev0): add working examples of signature verification.
+
 #[allow(unused_imports)]
 use core::array::ArrayTrait;
 use core::math::{u256_mul_mod_n, u256_inv_mod};
@@ -8,15 +17,17 @@ use core::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use core::integer::U256TryIntoNonZero;
 
-/// Secp256{k/r}1 ECDSA signature.
+/// Represents a Secp256{k/r}1 ECDSA signature.
+///
+/// This struct holds the components of an ECDSA signature: `r`, `s`, and `y_parity`.
 #[derive(Copy, Drop, Debug, PartialEq, Serde, Hash)]
 pub struct Signature {
     pub r: u256,
     pub s: u256,
-    // The parity of the y coordinate of the ec point whose x coordinate is `r`.
-    // `y_parity` == true means that the y coordinate is odd.
-    // Some places use non boolean v instead of y_parity.
-    // In that case, `signature_from_vrs` should be used.
+    /// The parity of the y coordinate of the elliptic curve point whose x coordinate is `r`.
+    /// `y_parity == true` means that the y coordinate is odd.
+    /// Some places use non boolean `v` instead of `y_parity`.
+    /// In that case, `signature_from_vrs` should be used.
     pub y_parity: bool,
 }
 
@@ -24,37 +35,96 @@ impl SignatureStorePacking of starknet::StorePacking<Signature, (u256, u256, boo
     fn pack(value: Signature) -> (u256, u256, bool) {
         (value.r, value.s, value.y_parity)
     }
+
     fn unpack(value: (u256, u256, bool)) -> Signature {
         let (r, s, y_parity) = value;
         Signature { r, s, y_parity }
     }
 }
 
-/// Creates an ECDSA signature from the `v`, `r` and `s` values.
+/// Creates an ECDSA signature from the `v`, `r`, and `s` values.
+///
 /// `v` is the sum of an odd number and the parity of the y coordinate of the ec point whose x
 /// coordinate is `r`.
+///
 /// See https://eips.ethereum.org/EIPS/eip-155 for more details.
 pub fn signature_from_vrs(v: u32, r: u256, s: u256) -> Signature {
     Signature { r, s, y_parity: v % 2 == 0 }
 }
 
+/// A trait for interacting with Secp256{k/r}1 curves.
+///
+/// Provides operations needed to work with Secp256k1 and Secp256r1 elliptic curves.
+/// It includes methods for accessing curve parameters and creating curve points.
+///
+/// # Examples
+///
+/// TODO(tadev0): add examples.
 pub trait Secp256Trait<Secp256Point> {
+    /// Returns the order (size) of the curve's underlying field.
+    ///
+    /// This is the number of points on the curve, also known as the curve order.
     fn get_curve_size() -> u256;
+
+    /// Returns the generator point (G) for the curve.
+    ///
+    /// The generator point is a standard base point on the curve from which other points
+    /// can be generated through scalar multiplication.
     fn get_generator_point() -> Secp256Point;
 
+    /// Creates a new curve point from its x and y coordinates.
+    ///
+    /// Returns `None` if the provided coordinates don't represent a valid point on the curve.
     fn secp256_ec_new_syscall(x: u256, y: u256) -> SyscallResult<Option<Secp256Point>>;
+
+    /// Creates a curve point on the curve given its x-coordinate and y-parity.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The x coordinate of the point
+    /// * `y_parity` - If true, choose the odd y value; if false, choose the even y value
+    ///
+    /// # Returns
+    ///
+    /// Returns `Some(point)` if a point exists with the given x coordinate,
+    /// `None` otherwise.
     fn secp256_ec_get_point_from_x_syscall(
         x: u256, y_parity: bool,
     ) -> SyscallResult<Option<Secp256Point>>;
 }
 
+/// A trait for performing operations on Secp256{k/r}1 curve points.
+///
+/// Provides operations needed for elliptic curve cryptography, including point addition
+/// and scalar multiplication.
+///
+/// # Examples
+/// TODO(tadev0): add examples.
 pub trait Secp256PointTrait<Secp256Point> {
+    /// Returns the x and y coordinates of the curve point.
     fn get_coordinates(self: Secp256Point) -> SyscallResult<(u256, u256)>;
+
+    /// Performs elliptic curve point addition.
+    ///
+    /// Adds `self` and `other` following the curve's addition law and returns
+    /// the resulting point.
     fn add(self: Secp256Point, other: Secp256Point) -> SyscallResult<Secp256Point>;
+
+    /// Performs scalar multiplication of a curve point.
+    ///
+    /// Multiplies `self` by the given scalar value.
     fn mul(self: Secp256Point, scalar: u256) -> SyscallResult<Secp256Point>;
 }
 
-/// Checks whether `value` is in the range [1, N), where N is the size of the curve.
+/// Checks whether the given value is a valid signature component.
+///
+/// For ECDSA signatures to be secure, both `r` and `s` components must be in the range [1, N),
+/// where N is the order of the curve. This function validates that a given value meets this
+/// requirement.
+///
+/// # Returns
+///
+/// Returns `true` if the value is in the valid range [1, N), `false` otherwise.
 pub fn is_signature_entry_valid<
     Secp256Point, +Drop<Secp256Point>, impl Secp256Impl: Secp256Trait<Secp256Point>,
 >(
@@ -63,6 +133,10 @@ pub fn is_signature_entry_valid<
     value != 0_u256 && value < Secp256Impl::get_curve_size()
 }
 
+/// Checks whether a signature is valid given a public key point and a message hash.
+///
+/// # Examples
+/// TODO(tadev0): add examples.
 pub fn is_valid_signature<
     Secp256Point,
     +Drop<Secp256Point>,
@@ -90,8 +164,12 @@ pub fn is_valid_signature<
     x == r
 }
 
-/// Receives a signature and the signed message hash.
-/// Returns the public key associated with the signer, represented as a point on the curve.
+/// Recovers the public key associated with a given signature and message hash.
+///
+/// Returns the public key as a point on the curve.
+///
+/// # Examples
+/// TODO(tadev0): add examples.
 pub fn recover_public_key<
     Secp256Point,
     +Drop<Secp256Point>,
