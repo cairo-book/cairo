@@ -1,8 +1,16 @@
+//! Range and iteration utilities.
+//!
+//! This module provides range creation and iteration capabilities, supporting
+//! both standard and Sierra-optimized range operations.
+
 use core::iter::{IntoIterator, Iterator};
 use core::num::traits::One;
 use core::traits::Add;
 
 /// Represents the range [start, end).
+///
+/// The range `start..end` contains all values with `start <= x < end`.
+/// It is empty if `start >= end`.
 #[derive(Clone, Drop)]
 pub struct Range<T> {
     /// The lower bound of the range (inclusive).
@@ -15,6 +23,12 @@ pub struct Range<T> {
 #[generate_trait]
 pub impl RangeOpImpl<T> of RangeOp<T> {
     /// Handles the `..` operator. Returns the value of the expression `start..end`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// for _ in 0..10_u8 {}
+    /// ```
     fn range(start: T, end: T) -> Range<T> {
         Range { start, end }
     }
