@@ -1,3 +1,5 @@
+//! Main entrypoint for the Cairo core library.
+
 pub mod traits;
 #[feature("deprecated-index-traits")]
 #[feature("deprecated-op-assign-traits")]
@@ -9,8 +11,10 @@ use traits::{
 };
 use serde::Serde;
 
+/// `usize` is an alias for `u32` type.
 pub type usize = u32;
 
+/// `bool` enum representing either `false` or `true`.
 #[derive(Copy, Drop, Default)]
 pub enum bool {
     #[default]
@@ -26,6 +30,7 @@ impl BoolSerde of Serde<bool> {
             0_felt252
         }.serialize(ref output);
     }
+
     fn deserialize(ref serialized: Span<felt252>) -> Option<bool> {
         Option::Some(*serialized.pop_front()? != 0)
     }
@@ -76,6 +81,7 @@ impl BoolPartialEq of PartialEq<bool> {
             true => *rhs,
         }
     }
+
     #[inline]
     fn ne(lhs: @bool, rhs: @bool) -> bool {
         match lhs {
@@ -85,8 +91,8 @@ impl BoolPartialEq of PartialEq<bool> {
     }
 }
 
-/// Default values for felt252_dict values.
 impl BoolFelt252DictValue of Felt252DictValue<bool> {
+    /// Returns the default value for dictionary `bool` values, i.e., `false`.
     #[inline]
     fn zero_default() -> bool nopanic {
         false
@@ -100,19 +106,23 @@ impl BoolIntoFelt252 of Into<bool, felt252> {
         bool_to_felt252(self)
     }
 }
+
+/// Boolean module.
 pub mod boolean;
 
+/// Circuit module.
 pub mod circuit;
 
 /// General purpose implicits.
 pub extern type RangeCheck;
 pub extern type SegmentArena;
 
-/// felt252.
+/// `felt252` module.
 mod felt_252;
 #[allow(unused_imports)]
 use felt_252::{Felt252One, Felt252Zero};
 
+/// `felt252` is the basic field element used in Cairo.
 #[derive(Copy, Drop)]
 pub extern type felt252;
 extern fn felt252_const<const value: felt252>() -> felt252 nopanic;
@@ -121,6 +131,7 @@ impl Felt252Serde of Serde<felt252> {
     fn serialize(self: @felt252, ref output: Array<felt252>) {
         output.append(*self);
     }
+
     fn deserialize(ref serialized: Span<felt252>) -> Option<felt252> {
         let mut snapshot = serialized.snapshot;
         match crate::array::array_snapshot_pop_front(ref snapshot) {
@@ -136,6 +147,7 @@ impl Felt252Serde of Serde<felt252> {
     }
 }
 
+extern fn felt252_add(lhs: felt252, rhs: felt252) -> felt252 nopanic;
 impl Felt252Add of Add<felt252> {
     #[inline]
     fn add(lhs: felt252, rhs: felt252) -> felt252 {
@@ -149,7 +161,7 @@ impl Felt252AddEq of AddEq<felt252> {
     }
 }
 
-extern fn felt252_add(lhs: felt252, rhs: felt252) -> felt252 nopanic;
+extern fn felt252_sub(lhs: felt252, rhs: felt252) -> felt252 nopanic;
 impl Felt252Sub of Sub<felt252> {
     #[inline]
     fn sub(lhs: felt252, rhs: felt252) -> felt252 {
@@ -163,7 +175,7 @@ impl Felt252SubEq of SubEq<felt252> {
     }
 }
 
-extern fn felt252_sub(lhs: felt252, rhs: felt252) -> felt252 nopanic;
+extern fn felt252_mul(lhs: felt252, rhs: felt252) -> felt252 nopanic;
 impl Felt252Mul of Mul<felt252> {
     #[inline]
     fn mul(lhs: felt252, rhs: felt252) -> felt252 {
@@ -177,8 +189,6 @@ impl Felt252MulEq of MulEq<felt252> {
     }
 }
 
-extern fn felt252_mul(lhs: felt252, rhs: felt252) -> felt252 nopanic;
-
 impl Felt252Neg of Neg<felt252> {
     #[inline]
     fn neg(a: felt252) -> felt252 {
@@ -186,6 +196,16 @@ impl Felt252Neg of Neg<felt252> {
     }
 }
 
+/// Performs a division on `felt252` values.
+///
+/// # Examples
+///
+/// ```
+/// use core::felt252_div;
+///
+/// assert!(felt252_div(4, 2) == 2);
+/// ```
+///
 pub extern fn felt252_div(lhs: felt252, rhs: NonZero<felt252>) -> felt252 nopanic;
 
 impl Felt252PartialEq of PartialEq<felt252> {
@@ -210,6 +230,7 @@ impl Felt252TryIntoNonZero of TryInto<felt252, NonZero<felt252>> {
 }
 
 impl Felt252Default of Default<felt252> {
+    /// Returns the default value for a `felt252`, i.e., 0.
     #[inline]
     fn default() -> felt252 nopanic {
         0
@@ -217,6 +238,7 @@ impl Felt252Default of Default<felt252> {
 }
 
 impl Felt252Felt252DictValue of Felt252DictValue<felt252> {
+    /// Returns the default value for dictionary `felt252` values, i.e., 0.
     #[inline]
     fn zero_default() -> felt252 nopanic {
         0
@@ -227,12 +249,12 @@ impl Felt252Felt252DictValue of Felt252DictValue<felt252> {
 extern fn dup<T>(obj: T) -> (T, T) nopanic;
 extern fn drop<T>(obj: T) nopanic;
 
-/// Boxes.
+/// Box module.
 pub mod box;
 #[allow(unused_imports)]
 use box::{Box, BoxTrait};
 
-/// Nullable
+/// Nullable module.
 pub mod nullable;
 #[allow(unused_imports)]
 use nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box};
@@ -242,40 +264,41 @@ pub mod array;
 #[allow(unused_imports)]
 use array::{Array, ArrayTrait};
 
-/// Span.
+/// Span module.
 #[allow(unused_imports)]
 use array::{Span, SpanTrait};
 
-/// Dictionary.
+/// Dictionary module.
 pub mod dict;
 #[allow(unused_imports)]
 use dict::{
     Felt252Dict, SquashedFelt252Dict, felt252_dict_new, felt252_dict_squash, Felt252DictTrait,
 };
 
-/// Result.
+/// Result module.
 pub mod result;
 #[allow(unused_imports)]
 use result::{Result, ResultTrait};
 
-/// Option.
+/// Option module.
 pub mod option;
 #[allow(unused_imports)]
 use option::{Option, OptionTrait};
 
-/// Clone.
+/// Clone module.
 pub mod clone;
 #[allow(unused_imports)]
 use clone::Clone;
 
-/// EC.
+/// Elliptic curve module.
 pub mod ec;
 #[allow(unused_imports)]
 use ec::{EcOp, EcPoint, EcState};
 
+/// ECDSA module.
 pub mod ecdsa;
 
-/// Integer.
+/// Integer module.
 #[feature("corelib-internal-use")]
 pub mod integer;
 #[allow(unused_imports)]
@@ -291,11 +314,11 @@ use integer::{
 #[allow(unused_imports)]
 use integer::{u128_sqrt, u256_sqrt};
 
-/// Math.
+/// Math module.
 #[feature("corelib-internal-use")]
 pub mod math;
 
-/// Module containing the traits for relevant for numeric types.
+/// Module containing various traits for relevant numeric types.
 pub mod num;
 
 /// Module containing the operations that can be performed on the different types.
@@ -309,19 +332,34 @@ pub mod gas;
 #[allow(unused_imports)]
 use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 
-
-/// Panics.
+/// Panics module.
 pub mod panics;
 #[allow(unused_imports)]
 use panics::{panic, Panic, PanicResult};
 
 pub enum never {}
 
+/// Panics with the given `felt252` as error message.
+///
+/// # Examples
+///
+/// ```
+/// use core::panic_with_felt252;
+///
+/// panic_with_felt252('error message');
+/// ```
 #[inline]
 pub fn panic_with_felt252(err_code: felt252) -> never {
     panic(array![err_code])
 }
 
+/// Panics if `cond` is false with the given `felt252` as error message.
+///
+/// # Examples
+///
+/// ```
+/// assert(false, 'error message');
+/// ```
 #[inline]
 pub fn assert(cond: bool, err_code: felt252) {
     if !cond {
@@ -329,46 +367,49 @@ pub fn assert(cond: bool, err_code: felt252) {
     }
 }
 
-/// Serialization and Deserialization.
+/// Serde module for serialization and deserialization.
 pub mod serde;
 
 /// Hash functions.
 pub mod hash;
 
+/// Keccak module.
 pub mod keccak;
 
+/// Sha256 module.
 pub mod sha256;
 
-/// Pedersen
+/// Pedersen module.
 pub mod pedersen;
 #[allow(unused_imports)]
 use pedersen::Pedersen;
 
-/// Poseidon
+/// Poseidon module.
 pub mod poseidon;
 #[allow(unused_imports)]
 use poseidon::Poseidon;
 
-/// Debug.
+/// Debug module.
 pub mod debug;
 
+/// Fmt module.
 pub mod fmt;
 
-/// Starknet
+/// Starknet module.
 #[feature("corelib-internal-use")]
 pub mod starknet;
 #[allow(unused_imports)]
 use starknet::System;
 
-/// Internals.
+/// Internals module.
 pub mod internal;
 
-/// Zeroable.
+/// Zeroable module.
 pub mod zeroable;
 #[allow(unused_imports)]
 use zeroable::{Zeroable, NonZero};
 
-/// bytes31.
+/// `bytes31` module.
 pub mod bytes_31;
 #[allow(unused_imports)]
 use bytes_31::{
@@ -376,17 +417,17 @@ use bytes_31::{
     Felt252TryIntoBytes31,
 };
 
-/// BytesArray.
+/// BytesArray module.
 pub mod byte_array;
 #[allow(unused_imports)]
 use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayStringLiteral, ByteArrayTrait};
 
-/// String.
+/// String module.
 pub mod string;
 #[allow(unused_imports)]
 use string::StringLiteral;
 
-/// to_byte_array.
+/// `to_byte_array` module.
 pub mod to_byte_array;
 
 #[cfg(test)]
@@ -395,12 +436,12 @@ mod test;
 /// Module for testing only.
 pub mod testing;
 
-/// Metaprogramming.
+/// Metaprogramming module.
 pub mod metaprogramming;
 
-/// Preludes.
+/// Preludes module.
 #[allow(unused_imports)]
 mod prelude;
 
-/// Iterators.
+/// Iterators module.
 pub mod iter;
