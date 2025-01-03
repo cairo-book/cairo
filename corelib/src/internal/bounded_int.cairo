@@ -1,3 +1,5 @@
+//! Core implementations for bounded integer types.
+
 use crate::integer::{downcast, upcast};
 use crate::RangeCheck;
 
