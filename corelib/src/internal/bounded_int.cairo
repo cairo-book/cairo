@@ -45,12 +45,15 @@ impl BoundedIntDebug<const MIN: felt252, const MAX: felt252> =
 pub trait AddHelper<Lhs, Rhs> {
     type Result;
 }
+
 impl AddBI01BI01Helper of AddHelper<BoundedInt<0, 1>, BoundedInt<0, 1>> {
     type Result = BoundedInt<0, 2>;
 }
+
 impl AddBI02BI01Helper of AddHelper<BoundedInt<0, 2>, BoundedInt<0, 1>> {
     type Result = BoundedInt<0, 3>;
 }
+
 extern fn bounded_int_add<Lhs, Rhs, impl H: AddHelper<Lhs, Rhs>>(
     lhs: Lhs, rhs: Rhs,
 ) -> H::Result nopanic;
@@ -59,6 +62,7 @@ extern fn bounded_int_add<Lhs, Rhs, impl H: AddHelper<Lhs, Rhs>>(
 pub trait SubHelper<Lhs, Rhs> {
     type Result;
 }
+
 extern fn bounded_int_sub<Lhs, Rhs, impl H: SubHelper<Lhs, Rhs>>(
     lhs: Lhs, rhs: Rhs,
 ) -> H::Result nopanic;
@@ -67,11 +71,13 @@ extern fn bounded_int_sub<Lhs, Rhs, impl H: SubHelper<Lhs, Rhs>>(
 pub trait MulHelper<Lhs, Rhs> {
     type Result;
 }
+
 impl NonZeroMulHelper<
     Lhs, Rhs, impl H: MulHelper<Lhs, Rhs>,
 > of MulHelper<NonZero<Lhs>, NonZero<Rhs>> {
     type Result = NonZero<H::Result>;
 }
+
 extern fn bounded_int_mul<Lhs, Rhs, impl H: MulHelper<Lhs, Rhs>>(
     lhs: Lhs, rhs: Rhs,
 ) -> H::Result nopanic;
@@ -81,6 +87,7 @@ pub trait DivRemHelper<Lhs, Rhs> {
     type DivT;
     type RemT;
 }
+
 extern fn bounded_int_div_rem<Lhs, Rhs, impl H: DivRemHelper<Lhs, Rhs>>(
     lhs: Lhs, rhs: NonZero<Rhs>,
 ) -> (H::DivT, H::RemT) implicits(RangeCheck) nopanic;
@@ -90,18 +97,21 @@ pub trait ConstrainHelper<T, const BOUNDARY: felt252> {
     type LowT;
     type HighT;
 }
+
 impl NonZeroConstrainHelper<
     T, const BOUNDARY: felt252, impl H: ConstrainHelper<T, BOUNDARY>,
 > of ConstrainHelper<NonZero<T>, BOUNDARY> {
     type LowT = NonZero<H::LowT>;
     type HighT = NonZero<H::HighT>;
 }
+
 mod constrain0 {
     pub impl Impl<T, const MIN: felt252, const MAX: felt252> of super::ConstrainHelper<T, 0> {
         type LowT = super::BoundedInt<MIN, -1>;
         type HighT = super::BoundedInt<0, MAX>;
     }
 }
+
 impl I8Constrain0 = constrain0::Impl<i8, -0x80, 0x7f>;
 impl I16Constrain0 = constrain0::Impl<i16, -0x8000, 0x7fff>;
 impl I32Constrain0 = constrain0::Impl<i32, -0x80000000, 0x7fffffff>;
@@ -117,6 +127,7 @@ extern fn bounded_int_constrain<T, const BOUNDARY: felt252, impl H: ConstrainHel
 pub trait TrimHelper<T, const TRIMMED_VALUE: felt252> {
     type Target;
 }
+
 mod trim_impl {
     pub impl Impl<
         T, const TRIMMED_VALUE: felt252, const MIN: felt252, const MAX: felt252,
@@ -124,6 +135,7 @@ mod trim_impl {
         type Target = super::BoundedInt<MIN, MAX>;
     }
 }
+
 impl U8TrimBelow = trim_impl::Impl<u8, 0, 1, 0xff>;
 impl U8TrimAbove = trim_impl::Impl<u8, 0xff, 0, 0xfe>;
 impl I8TrimBelow = trim_impl::Impl<i8, -0x80, -0x7f, 0x7f>;
@@ -180,6 +192,7 @@ mod neg_felt252 {
         const VALUE: felt252 = OUTPUT;
     }
 }
+
 impl NegFelt2520 = neg_felt252::Impl<0, 0>;
 impl NegFelt2521 = neg_felt252::Impl<1, -1>;
 impl NegFelt252Minus1 = neg_felt252::Impl<-1, 1>;
