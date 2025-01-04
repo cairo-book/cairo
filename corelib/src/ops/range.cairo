@@ -1,8 +1,41 @@
+//! Range and iteration utilities.
+//!
+//! This module provides functionality for creating and iterating over ranges of values.
+//! A range represents an interval of values from a start point to an end point.
+//!
+//! # The Range Operator `..`
+//!
+//! The `..` operator creates a range that includes all values from the start value
+//! up to, but not including, the end value. For example:
+//! * `0..5` represents the values 0, 1, 2, 3, 4
+//! * `start..end` represents all values x where start <= x < end
+//!
+//! # Examples
+//!
+//! ```
+//! use core::ops::Range;
+//!
+//! // Iterate over numbers 0 to 9
+//! for i in 0..10_u8 {
+//!     // use i
+//! }
+//!
+//! // Create a range explicitly
+//! let range = Range { start: 5, end: 10 };
+//!
+//! for i in range {
+//!     // use i
+//! }
+//! ```
+
 use core::iter::{IntoIterator, Iterator};
 use core::num::traits::One;
 use core::traits::Add;
 
 /// Represents the range [start, end).
+///
+/// The range `start..end` contains all values with `start <= x < end`.
+/// It is empty if `start >= end`.
 #[derive(Clone, Drop)]
 pub struct Range<T> {
     /// The lower bound of the range (inclusive).
@@ -47,7 +80,17 @@ impl RangeDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Range
 /// Handles the range operator (`..`).
 #[generate_trait]
 pub impl RangeOpImpl<T> of RangeOp<T> {
-    /// Handles the `..` operator. Returns the value of the expression `start..end`.
+    /// Handles the `..` operator.
+    /// Returns the value of the expression `start..end`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let range = 0..10_u8;
+    ///
+    /// for i in range { // use i
+    /// };
+    /// ```
     fn range(start: T, end: T) -> Range<T> {
         Range { start, end }
     }
