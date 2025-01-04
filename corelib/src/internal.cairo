@@ -1,3 +1,9 @@
+//! Core internal utilities.
+//!
+//! This module provides low-level functionality that is essential for Cairo's
+//! internal operations but is not typically used directly by end users. It includes
+//! utilities for memory management, implicit handling, and optimized variant types.
+
 pub extern fn revoke_ap_tracking() implicits() nopanic;
 
 /// Function to enforce that `Implicit` is used by a function calling it.
