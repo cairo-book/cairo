@@ -1,3 +1,14 @@
+//! Sequential storage pointer management for contract storage.
+//!
+//! This modules provides abstractions for structs stored sequentially in contract storage, where
+//! fields are accessed via direct offsets from a base address rather than separate storage nodes.
+//!
+//! The module defines:
+//! - `SubPointers`: Access to sequential struct fields via storage pointers
+//! - `SubPointersMut`: Mutable storage operations
+//! - Forward traits for handling non `StoragePointer` types
+//! - Reference implementation for `u256` sequential storage
+
 use super::{Mutable, StorageAsPointer, StoragePointer, StoragePointer0Offset};
 
 /// Similar to storage node, but for structs which are stored sequentially in the storage. In
